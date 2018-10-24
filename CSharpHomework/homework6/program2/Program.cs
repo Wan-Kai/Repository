@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.Runtime.Serialization;
+using System.Xml.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,34 +13,39 @@ public class OrderDetails
     public int orderNumber;
     public string orderName;
     public string orderOwner;
+    public string moneyNumber;
     public OrderDetails()
     {
         OrderDetails.orders++;
         this.orderNumber = OrderDetails.orders;
     }
-    public OrderDetails(string orName, string orOwner)
+    public OrderDetails(string orName, string orOwner, string orMoney)
     {
         OrderDetails.orders++;
         this.orderNumber = OrderDetails.orders;
         this.orderName = orName;
         this.orderOwner = orOwner;
+        this.moneyNumber = orMoney;
     }
     public void print()
     {
-        Console.WriteLine(this.orderNumber);
-        Console.WriteLine(this.orderName);
-        Console.WriteLine(this.orderOwner);
+        Console.WriteLine("订单号为：    " + this.orderNumber);
+        Console.WriteLine("订单名称为：  " + this.orderName);
+        Console.WriteLine("客户名称为：  " + this.orderOwner);
+        Console.WriteLine("订单金额为：  " + this.moneyNumber);
     }
-    public void change(string orName, string orOwner)
+    public void change(string orName, string orOwner, string orMoney)
     {
         this.orderName = orName;
         this.orderOwner = orOwner;
+        this.moneyNumber = orMoney;
     }
 }
+[Serializable]
 public class Order
 {
     public List<OrderDetails> orderList = new List<OrderDetails>();
-   
+
 }
 public class OrderService
 {
@@ -48,60 +56,76 @@ public class OrderService
         e.orderName = Console.ReadLine();
         Console.WriteLine("请输入客户名称：");
         e.orderOwner = Console.ReadLine();
-        order.orderList.Add(e);       
+        Console.WriteLine("请输入订单金额：");
+        e.moneyNumber = Console.ReadLine();
+        order.orderList.Add(e);
     }
     public void findOrderByNumber(Order order)
     {
-        Console.WriteLine("请选择查询方式（1、订单号 2、订单名称 3、客户名称）");
+        Console.WriteLine("请选择查询方式（1、订单号 2、订单名称 3、客户名称 4、大于一万元的订单）");
         int findWay = Int32.Parse(Console.ReadLine());
         switch (findWay)
         {
             case 1:
                 Console.WriteLine("请输入订单号：");
                 int num = Int32.Parse(Console.ReadLine());
-                for (int i = 0; i < order.orderList.Count; i++)
+
+                var inquireNumber = from numSort in order.orderList
+                                    where numSort.orderNumber == num
+                                    select numSort;
+
+                foreach (var n in inquireNumber)
                 {
-                    if (order.orderList[i].orderNumber == num)
-                    {
-                        Console.WriteLine("******************************************");
-                        order.orderList[i].print();
-                        Console.WriteLine("******************************************");
-                        return;
-                    }
+                    Console.WriteLine("******************************************");
+                    n.print();
+                    Console.WriteLine("******************************************");
                 }
-                Console.WriteLine("没有此订单号的订单！");
+
                 break;
             case 2:
                 Console.WriteLine("请输入订单名称：");
                 string name = Console.ReadLine();
-                for (int i = 0; i < order.orderList.Count; i++)
+
+                var orderName = from nameSort in order.orderList
+                                where nameSort.orderName == name
+                                select nameSort;
+
+                foreach (var n in orderName)
                 {
-                    if (order.orderList[i].orderName == name)
-                    {
-                        Console.WriteLine("******************************************");
-                        order.orderList[i].print();
-                        Console.WriteLine("******************************************");
-                        return;
-                    }
+                    Console.WriteLine("******************************************");
+                    n.print();
+                    Console.WriteLine("******************************************");
                 }
-                Console.WriteLine("没有此名称的订单！");
+
                 break;
             case 3:
                 Console.WriteLine("请输入客户名称：");
                 string owner = Console.ReadLine();
-                for (int i = 0; i < order.orderList.Count; i++)
+
+                var ownerName = from nameSort in order.orderList
+                                where nameSort.orderName == owner
+                                select nameSort;
+
+                foreach (var n in ownerName)
                 {
-                    if (order.orderList[i].orderOwner == owner)
-                    {
-                        Console.WriteLine("******************************************");
-                        order.orderList[i].print();
-                        Console.WriteLine("******************************************");
-                        return;
-                    }
+                    Console.WriteLine("******************************************");
+                    n.print();
+                    Console.WriteLine("******************************************");
                 }
-                Console.WriteLine("没有此名称的订单！");
+
                 break;
-        }     
+            case 4:
+                var orderByMoney = from n in order.orderList
+                                   where int.Parse(n.moneyNumber) > 10000
+                                   select n;
+                foreach (var n in orderByMoney)
+                {
+                    Console.WriteLine("******************************************");
+                    n.print();
+                    Console.WriteLine("******************************************");
+                }
+                break;
+        }
     }
     public void ChangeByNumber(ref Order order)
     {
@@ -116,6 +140,8 @@ public class OrderService
                 order.orderList[i].orderName = Console.ReadLine();
                 Console.WriteLine("请重新输入客户名称：");
                 order.orderList[i].orderOwner = Console.ReadLine();
+                Console.WriteLine("请重新输入订单金额：");
+                order.orderList[i].moneyNumber = Console.ReadLine();
                 Console.WriteLine("信息已成功修改！");
                 return;
             }
@@ -131,21 +157,41 @@ public class OrderService
             if (order.orderList[i].orderNumber == num)
             {
                 order.orderList.RemoveAt(i);
-                for(;i< order.orderList.Count;i++)
+                for (; i < order.orderList.Count; i++)
                 {
                     order.orderList[i].orderNumber--;
-                }               
+                }
                 Console.WriteLine("现在的订单情况是：");
-                for(int j =0;j< order.orderList.Count;j++)
+                for (int j = 0; j < order.orderList.Count; j++)
                 {
                     Console.WriteLine("******************************************");
                     order.orderList[j].print();
                     Console.WriteLine("******************************************");
-                }             
+                }
                 return;
             }
         }
         Console.WriteLine("没有此订单号的订单！");
+    }
+
+    public static void XmlSerializer(XmlSerializer ser, string fileName, ref Order order)
+    {
+        FileStream fs = new FileStream(fileName, FileMode.Create);
+        ser.Serialize(fs, order);
+        fs.Close();
+    }
+    public void Export(ref Order order)
+    {
+        XmlSerializer xmlser = new XmlSerializer(typeof(Order));
+        String xmlFileName = "my.xml";
+        XmlSerializer(xmlser, xmlFileName, ref order);
+    }
+
+    public void Import()
+    {
+        string xmlFileName = "my.xml";
+        string xml = File.ReadAllText(xmlFileName);
+        Console.WriteLine(xml);
     }
 }
 namespace program2
@@ -159,10 +205,12 @@ namespace program2
             OrderService os = new OrderService();
             Console.WriteLine("欢迎进入订单管理系统！");
             System.Threading.Thread.Sleep(500);
-            Console.WriteLine("请创建您的第一份订单! ");
+            Console.WriteLine("请选择操作! ");
             System.Threading.Thread.Sleep(500);
             while (od != 0)
             {
+                Console.WriteLine("1、添加订单  2、删除订单  3、修改订单  4、查询订单 ");
+                od = Int32.Parse(Console.ReadLine());
                 switch (od)
                 {
                     case 1:
@@ -172,14 +220,14 @@ namespace program2
                         os.deleteByNumber(ref order1);
                         break;
                     case 3:
-                        os.ChangeByNumber(ref order1);                       
+                        os.ChangeByNumber(ref order1);
                         break;
                     case 4:
                         os.findOrderByNumber(order1);
                         break;
                 }
-                Console.WriteLine("1、添加订单  2、删除订单  3、修改订单  4、查询订单");
-                od = Int32.Parse(Console.ReadLine());
+            
+          
             }
         }
     }

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.Runtime.Serialization;
+using System.Xml.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -38,6 +41,7 @@ public class OrderDetails
         this.moneyNumber = orMoney;
     }
 }
+[Serializable]
 public class Order
 {
     public List<OrderDetails> orderList = new List<OrderDetails>();
@@ -169,6 +173,26 @@ public class OrderService
         }
         Console.WriteLine("没有此订单号的订单！");
     }
+
+    public static void XmlSerializer(XmlSerializer ser,string fileName,ref Order order)
+    {
+        FileStream fs = new FileStream(fileName, FileMode.Create);
+        ser.Serialize(fs, order);
+        fs.Close();
+    }
+    public void Export (ref Order order)
+    {
+        XmlSerializer xmlser = new XmlSerializer(typeof(Order));
+        String xmlFileName = "my.xml";
+        XmlSerializer(xmlser, xmlFileName,ref order);
+    }
+
+    public void Import ()
+    {
+        string xmlFileName = "my.xml";
+        string xml = File.ReadAllText(xmlFileName);
+        Console.WriteLine(xml);
+    }
 }
 namespace program2
 {
@@ -202,7 +226,8 @@ namespace program2
                         os.findOrderByNumber(order1);
                         break;
                 }
-               
+                os.Export(ref order1);
+                os.Import();
             }
         }
     }
