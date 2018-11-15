@@ -359,7 +359,7 @@ namespace homework8
                 string filePath = "my.xml";
 
                 Export(ref order, filePath);
-                GetHtmlByXml(filePath, "my.xsl");
+                GetHtmlByXml(filePath, ".../.../my.xsl");
             }
             catch
             {
